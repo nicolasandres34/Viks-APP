@@ -104,9 +104,8 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
           <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xl">›</button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <StatChip label={t.yourDays} value={ownDays.size} color="blue" loading={loading} />
-          <StatChip label={t.othersDays} value={othersDays.size} color="red" loading={loading} />
         </div>
       </div>
 
