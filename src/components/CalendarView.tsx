@@ -33,9 +33,9 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
   function clearSelection() { setRangeStart(null); setRangeEnd(null); setNotes('') }
 
   function handleDayClick(dateStr: string) {
-    if (!rangeStart) { setRangeStart(dateStr); setRangeEnd(null); return }
-    if (dateStr === rangeStart && !rangeEnd) { clearSelection(); return }
-    if (dateStr >= rangeStart) setRangeEnd(dateStr)
+    if (!rangeStart || rangeEnd) { setRangeStart(dateStr); setRangeEnd(null); return }
+    if (dateStr === rangeStart) { clearSelection(); return }
+    if (dateStr > rangeStart) setRangeEnd(dateStr)
     else { setRangeStart(dateStr); setRangeEnd(null) }
   }
 
