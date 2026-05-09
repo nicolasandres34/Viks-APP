@@ -25,7 +25,7 @@ export default function Layout({ profile, onSignOut, children }: Props) {
       <header className="flex-shrink-0 z-20 bg-slate-800/90 backdrop-blur border-b border-slate-700 safe-top">
         <div className="w-full px-4 lg:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🔐</span>
+            <span className="text-lg">🏠</span>
             <span className="font-semibold text-slate-100 truncate max-w-[180px]">{firstName(profile.nombre)}</span>
             {profile.role === 'admin' && (
               <span className="text-xs bg-blue-600/30 text-blue-400 border border-blue-600/40 rounded-full px-2 py-0.5">
