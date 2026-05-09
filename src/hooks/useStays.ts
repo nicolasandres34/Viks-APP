@@ -36,14 +36,14 @@ export function useStays(userId: string, isAdmin = false) {
     const desde = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const hasta = new Date(year, month + 1, 0).toISOString().slice(0, 10)
 
+    // Always fetch all stays so every user sees occupied days
+    // Admin also gets profile names for the detail panel
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query: any = supabase
+    const query: any = supabase
       .from('stays')
-      .select(isAdmin ? '*, profiles(nombre)' : '*')
+      .select(isAdmin ? '*, profiles(nombre)' : '*, user_id')
       .lte('fecha_inicio', hasta)
       .gte('fecha_fin', desde)
-
-    if (!isAdmin) query = query.eq('user_id', userId)
 
     const { data } = await query
     setStays(data ?? [])

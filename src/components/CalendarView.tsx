@@ -187,20 +187,28 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
               <div className="px-4 py-2.5 space-y-2 border-b border-slate-700">
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Booked in this period</p>
                 {selectedStays.map(s => {
-                  const name = isAdmin ? (s as StayWithProfile).profiles?.nombre ?? '—' : 'You'
-                  const canDelete = isAdmin || s.user_id === userId
+                  const isOwn = s.user_id === userId
+                  const canDelete = isAdmin || isOwn
+                  const name = isAdmin
+                    ? (s as StayWithProfile).profiles?.nombre ?? '—'
+                    : isOwn ? 'You' : null
+
                   return (
                     <div key={s.id} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
-                      <div>
-                        <p className="text-sm font-medium text-slate-200">{name}</p>
-                        <p className="text-xs text-slate-400">
-                          {fmtFull(s.fecha_inicio)} – {fmtFull(s.fecha_fin)}
-                          {' · '}{daysBetween(s.fecha_inicio, s.fecha_fin)} night{daysBetween(s.fecha_inicio, s.fecha_fin) !== 1 ? 's' : ''}
-                        </p>
-                        {s.notas && <p className="text-xs text-slate-500">{s.notas}</p>}
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isOwn ? 'bg-blue-400' : 'bg-red-500'}`} />
+                        <div>
+                          {name && <p className="text-sm font-medium text-slate-200">{name}</p>}
+                          {!name && <p className="text-sm font-medium text-slate-400">Occupied</p>}
+                          <p className="text-xs text-slate-400">
+                            {fmtFull(s.fecha_inicio)} – {fmtFull(s.fecha_fin)}
+                            {' · '}{daysBetween(s.fecha_inicio, s.fecha_fin)} night{daysBetween(s.fecha_inicio, s.fecha_fin) !== 1 ? 's' : ''}
+                          </p>
+                          {isOwn && s.notas && <p className="text-xs text-slate-500">{s.notas}</p>}
+                        </div>
                       </div>
                       {canDelete && (
-                        <button onClick={() => handleDelete(s.id)} className="text-red-400 hover:text-red-300 text-xs ml-3 transition">Remove</button>
+                        <button onClick={() => handleDelete(s.id)} className="text-red-400 hover:text-red-300 text-xs ml-3 transition flex-shrink-0">Remove</button>
                       )}
                     </div>
                   )
