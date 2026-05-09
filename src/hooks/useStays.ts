@@ -18,6 +18,19 @@ export function useStays(userId: string, isAdmin = false) {
   const [stays, setStays] = useState<(Stay | StayWithProfile)[]>([])
   const [loading, setLoading] = useState(false)
 
+  const fetchAll = useCallback(async () => {
+    setLoading(true)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query: any = supabase
+      .from('stays')
+      .select(isAdmin ? '*, profiles(nombre)' : '*')
+      .order('fecha_inicio', { ascending: false })
+    if (!isAdmin) query = query.eq('user_id', userId)
+    const { data } = await query
+    setStays(data ?? [])
+    setLoading(false)
+  }, [userId, isAdmin])
+
   const fetchMonth = useCallback(async (year: number, month: number) => {
     setLoading(true)
     const desde = `${year}-${String(month + 1).padStart(2, '0')}-01`
@@ -70,5 +83,5 @@ export function useStays(userId: string, isAdmin = false) {
     if (error) throw error
   }
 
-  return { stays, loading, fetchMonth, getOccupiedDays, getStaysInRange, bookStay, deleteStay }
+  return { stays, loading, fetchAll, fetchMonth, getOccupiedDays, getStaysInRange, bookStay, deleteStay }
 }
