@@ -1,0 +1,74 @@
+import { useState, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
+
+export type Stay = {
+  id: number
+  user_id: string
+  fecha_inicio: string
+  fecha_fin: string
+  notas: string | null
+  created_at: string
+}
+
+export type StayWithProfile = Stay & {
+  profiles: { nombre: string }
+}
+
+export function useStays(userId: string, isAdmin = false) {
+  const [stays, setStays] = useState<(Stay | StayWithProfile)[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const fetchMonth = useCallback(async (year: number, month: number) => {
+    setLoading(true)
+    const desde = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const hasta = new Date(year, month + 1, 0).toISOString().slice(0, 10)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query: any = supabase
+      .from('stays')
+      .select(isAdmin ? '*, profiles(nombre)' : '*')
+      .lte('fecha_inicio', hasta)
+      .gte('fecha_fin', desde)
+
+    if (!isAdmin) query = query.eq('user_id', userId)
+
+    const { data } = await query
+    setStays(data ?? [])
+    setLoading(false)
+  }, [userId, isAdmin])
+
+  // Expands all stays into a Set of 'YYYY-MM-DD' strings for the given month
+  function getOccupiedDays(year: number, month: number): Set<string> {
+    const occupied = new Set<string>()
+    for (const stay of stays) {
+      const cursor = new Date(stay.fecha_inicio + 'T12:00:00')
+      const end = new Date(stay.fecha_fin + 'T12:00:00')
+      while (cursor <= end) {
+        if (cursor.getFullYear() === year && cursor.getMonth() === month) {
+          occupied.add(cursor.toISOString().slice(0, 10))
+        }
+        cursor.setDate(cursor.getDate() + 1)
+      }
+    }
+    return occupied
+  }
+
+  // Returns stays that overlap with a given range
+  function getStaysInRange(start: string, end: string) {
+    return stays.filter(s => s.fecha_inicio <= end && s.fecha_fin >= start)
+  }
+
+  async function bookStay(fechaInicio: string, fechaFin: string, notas?: string) {
+    const { error } = await supabase
+      .from('stays')
+      .insert({ user_id: userId, fecha_inicio: fechaInicio, fecha_fin: fechaFin, notas: notas ?? null })
+    if (error) throw error
+  }
+
+  async function deleteStay(id: number) {
+    const { error } = await supabase.from('stays').delete().eq('id', id)
+    if (error) throw error
+  }
+
+  return { stays, loading, fetchMonth, getOccupiedDays, getStaysInRange, bookStay, deleteStay }
+}
