@@ -22,7 +22,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
   const [notes, setNotes] = useState('')
   const [booking, setBooking] = useState(false)
 
-  const { stays, loading, fetchMonth, getOccupiedDays, getStaysInRange, bookStay, deleteStay } = useStays(userId, isAdmin)
+  const { loading, fetchMonth, getOccupiedDays, getStaysInRange, bookStay, deleteStay } = useStays(userId, isAdmin)
 
   useEffect(() => { fetchMonth(year, month) }, [year, month, fetchMonth])
 
@@ -69,7 +69,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
     }
   }
 
-  const occupied = getOccupiedDays(year, month)
+  const { own: ownDays, others: othersDays } = getOccupiedDays(year, month)
   const effectiveEnd = rangeEnd && rangeEnd >= (rangeStart ?? '') ? rangeEnd : rangeStart
   const selectedStays = rangeStart ? getStaysInRange(rangeStart, effectiveEnd ?? rangeStart) : []
   const ownConflict = selectedStays.some(s => s.user_id === userId)
@@ -101,8 +101,8 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <StatChip label={isAdmin ? 'Total bookings' : 'Your stays'} value={stays.length} color="blue" loading={loading} />
-          <StatChip label="Occupied days" value={occupied.size} color="red" loading={loading} />
+          <StatChip label="Your days" value={ownDays.size} color="blue" loading={loading} />
+          <StatChip label="Others' days" value={othersDays.size} color="red" loading={loading} />
         </div>
       </div>
 
@@ -128,7 +128,8 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                 />
               )
               const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-              const isOccupied = occupied.has(dateStr)
+              const isOwn = ownDays.has(dateStr)
+              const isOthers = othersDays.has(dateStr)
               const isToday = dateStr === todayStr
               const inRange = isInRange(dateStr)
               const onEdge = isEdge(dateStr)
@@ -149,7 +150,12 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                     ${onEdge ? 'text-white' : isToday ? 'text-blue-400' : 'text-slate-300'}`}>
                     {day}
                   </span>
-                  {isOccupied && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                  {(isOwn || isOthers) && (
+                    <div className="flex gap-0.5">
+                      {isOwn && <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+                      {isOthers && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                    </div>
+                  )}
                 </button>
               )
             })}
@@ -204,7 +210,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                             {fmtFull(s.fecha_inicio)} – {fmtFull(s.fecha_fin)}
                             {' · '}{daysBetween(s.fecha_inicio, s.fecha_fin)} night{daysBetween(s.fecha_inicio, s.fecha_fin) !== 1 ? 's' : ''}
                           </p>
-                          {isOwn && s.notas && <p className="text-xs text-slate-500">{s.notas}</p>}
+                          {s.notas && <p className="text-xs text-slate-500">{s.notas}</p>}
                         </div>
                       </div>
                       {canDelete && (

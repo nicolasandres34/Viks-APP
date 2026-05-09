@@ -50,20 +50,24 @@ export function useStays(userId: string, isAdmin = false) {
     setLoading(false)
   }, [userId, isAdmin])
 
-  // Expands all stays into a Set of 'YYYY-MM-DD' strings for the given month
-  function getOccupiedDays(year: number, month: number): Set<string> {
-    const occupied = new Set<string>()
+  // Returns two sets: own days and others' days for the given month
+  function getOccupiedDays(year: number, month: number): { own: Set<string>; others: Set<string> } {
+    const own = new Set<string>()
+    const others = new Set<string>()
     for (const stay of stays) {
+      const isOwn = stay.user_id === userId
       const cursor = new Date(stay.fecha_inicio + 'T12:00:00')
       const end = new Date(stay.fecha_fin + 'T12:00:00')
       while (cursor <= end) {
         if (cursor.getFullYear() === year && cursor.getMonth() === month) {
-          occupied.add(cursor.toISOString().slice(0, 10))
+          const d = cursor.toISOString().slice(0, 10)
+          if (isOwn) own.add(d)
+          else others.add(d)
         }
         cursor.setDate(cursor.getDate() + 1)
       }
     }
-    return occupied
+    return { own, others }
   }
 
   // Returns stays that overlap with a given range

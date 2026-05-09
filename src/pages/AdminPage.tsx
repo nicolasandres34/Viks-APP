@@ -30,13 +30,13 @@ export default function AdminPage({ profile, onSignOut }: Props) {
 
           <div className="mt-auto space-y-1.5">
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /> Occupied
+              <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" /> Your stays
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" /> Selected range
+              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /> Others' stays
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" /> Today
+              <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" /> Selected range
             </div>
           </div>
         </aside>
