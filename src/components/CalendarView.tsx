@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStays, StayWithProfile } from '../hooks/useStays'
+import { useLang } from '../contexts/LanguageContext'
 import toast from 'react-hot-toast'
 
 type Props = {
@@ -7,13 +8,8 @@ type Props = {
   isAdmin?: boolean
 }
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
 export default function CalendarView({ userId, isAdmin = false }: Props) {
+  const { t } = useLang()
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -49,11 +45,11 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
     setBooking(true)
     try {
       await bookStay(rangeStart, end, notes || undefined)
-      toast.success(`Stay booked: ${fmtFull(rangeStart)}${end !== rangeStart ? ' – ' + fmtFull(end) : ''}`)
+      toast.success(`${t.stayBooked} ${fmt(rangeStart)}${end !== rangeStart ? ' – ' + fmt(end) : ''}`)
       clearSelection()
       fetchMonth(year, month)
     } catch {
-      toast.error('Failed to book. Try again.')
+      toast.error(t.bookFailed)
     } finally {
       setBooking(false)
     }
@@ -62,11 +58,15 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
   async function handleDelete(id: number) {
     try {
       await deleteStay(id)
-      toast.success('Stay removed')
+      toast.success(t.stayRemoved)
       fetchMonth(year, month)
     } catch {
-      toast.error('Failed to remove stay.')
+      toast.error(t.removeFailed)
     }
+  }
+
+  function fmt(iso: string) {
+    return new Date(iso + 'T12:00:00').toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })
   }
 
   const { own: ownDays, others: othersDays } = getOccupiedDays(year, month)
@@ -89,29 +89,31 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
   const isInRange = (d: string) => !!rangeStart && d >= rangeStart && d <= (effectiveEnd ?? rangeStart)
   const isEdge = (d: string) => d === rangeStart || d === effectiveEnd
 
+  const nightsCount = rangeStart && effectiveEnd && effectiveEnd !== rangeStart
+    ? daysBetween(rangeStart, effectiveEnd)
+    : null
+
   return (
-    // flex column — fills whatever parent gives it
     <div className="flex flex-col min-h-0 h-full gap-3">
 
-      {/* ── Month nav + stats (never shrink) ── */}
+      {/* ── Month nav + stats ── */}
       <div className="flex-shrink-0 space-y-3">
         <div className="flex items-center justify-between">
           <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xl">‹</button>
-          <h3 className="font-semibold text-slate-100 text-base">{MONTHS[month]} {year}</h3>
+          <h3 className="font-semibold text-slate-100 text-base">{t.months[month]} {year}</h3>
           <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xl">›</button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <StatChip label="Your days" value={ownDays.size} color="blue" loading={loading} />
-          <StatChip label="Others' days" value={othersDays.size} color="red" loading={loading} />
+          <StatChip label={t.yourDays} value={ownDays.size} color="blue" loading={loading} />
+          <StatChip label={t.othersDays} value={othersDays.size} color="red" loading={loading} />
         </div>
       </div>
 
-      {/* ── Calendar grid (fixed height, never shrinks) ── */}
+      {/* ── Calendar grid ── */}
       <div className="flex-shrink-0 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-        {/* Day names */}
         <div className="grid grid-cols-7 border-b border-slate-700">
-          {DAYS.map(d => (
+          {t.days.map(d => (
             <div key={d} className="text-center text-xs text-slate-500 py-2 font-medium">{d}</div>
           ))}
         </div>
@@ -164,12 +166,10 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
         )}
       </div>
 
-      {/* ── Hint / booking panel (scrollable if content grows) ── */}
+      {/* ── Hint / booking panel ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {!rangeStart && (
-          <p className="text-xs text-slate-500 text-center pt-1">
-            Click a day · Click again to set a range · Then book your stay
-          </p>
+          <p className="text-xs text-slate-500 text-center pt-1">{t.clickHint}</p>
         )}
 
         {rangeStart && (
@@ -179,43 +179,46 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
               <div>
                 <p className="font-medium text-slate-200 text-sm">
                   {effectiveEnd && effectiveEnd !== rangeStart
-                    ? `${fmtFull(rangeStart)} – ${fmtFull(effectiveEnd)}`
-                    : fmtFull(rangeStart)}
+                    ? `${fmt(rangeStart)} – ${fmt(effectiveEnd)}`
+                    : fmt(rangeStart)}
                 </p>
-                {effectiveEnd && effectiveEnd !== rangeStart && (
-                  <p className="text-xs text-slate-500">{daysBetween(rangeStart, effectiveEnd)} night{daysBetween(rangeStart, effectiveEnd) !== 1 ? 's' : ''}</p>
+                {nightsCount && (
+                  <p className="text-xs text-slate-500">{t.nights(nightsCount)}</p>
                 )}
               </div>
-              <button onClick={clearSelection} className="text-slate-500 hover:text-slate-300 text-xs transition">Clear ✕</button>
+              <button onClick={clearSelection} className="text-slate-500 hover:text-slate-300 text-xs transition">{t.clear}</button>
             </div>
 
             {/* Existing stays in range */}
             {selectedStays.length > 0 && (
               <div className="px-4 py-2.5 space-y-2 border-b border-slate-700">
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Booked in this period</p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{t.bookedInPeriod}</p>
                 {selectedStays.map(s => {
                   const isOwn = s.user_id === userId
                   const canDelete = isAdmin || isOwn
                   const name = isAdmin
                     ? (s as StayWithProfile).profiles?.nombre ?? '—'
-                    : isOwn ? 'You' : null
+                    : isOwn ? t.you : null
+                  const stayNights = daysBetween(s.fecha_inicio, s.fecha_fin)
 
                   return (
                     <div key={s.id} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2.5">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isOwn ? 'bg-blue-400' : 'bg-red-500'}`} />
                         <div>
-                          {name && <p className="text-sm font-medium text-slate-200">{name}</p>}
-                          {!name && <p className="text-sm font-medium text-slate-400">Occupied</p>}
+                          {name
+                            ? <p className="text-sm font-medium text-slate-200">{name}</p>
+                            : <p className="text-sm font-medium text-slate-400">{t.occupied}</p>
+                          }
                           <p className="text-xs text-slate-400">
-                            {fmtFull(s.fecha_inicio)} – {fmtFull(s.fecha_fin)}
-                            {' · '}{daysBetween(s.fecha_inicio, s.fecha_fin)} night{daysBetween(s.fecha_inicio, s.fecha_fin) !== 1 ? 's' : ''}
+                            {fmt(s.fecha_inicio)} – {fmt(s.fecha_fin)}
+                            {' · '}{t.nights(stayNights)}
                           </p>
                           {s.notas && <p className="text-xs text-slate-500">{s.notas}</p>}
                         </div>
                       </div>
                       {canDelete && (
-                        <button onClick={() => handleDelete(s.id)} className="text-red-400 hover:text-red-300 text-xs ml-3 transition flex-shrink-0">Remove</button>
+                        <button onClick={() => handleDelete(s.id)} className="text-red-400 hover:text-red-300 text-xs ml-3 transition flex-shrink-0">{t.remove}</button>
                       )}
                     </div>
                   )
@@ -225,20 +228,16 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
 
             {/* Book form */}
             {ownConflict ? (
-              <p className="text-xs text-amber-400 text-center px-4 py-3">
-                You already have a stay in this period. Remove it first to rebook.
-              </p>
+              <p className="text-xs text-amber-400 text-center px-4 py-3">{t.ownConflict}</p>
             ) : othersConflict ? (
-              <p className="text-xs text-red-400 text-center px-4 py-3">
-                These dates are already booked by another user.
-              </p>
+              <p className="text-xs text-red-400 text-center px-4 py-3">{t.othersConflict}</p>
             ) : (
               <div className="px-4 py-3 space-y-2.5">
                 <input
                   type="text"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Notes (optional)"
+                  placeholder={t.notesOptional}
                   className="w-full px-3 py-2 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
@@ -246,7 +245,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                   disabled={booking}
                   className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-sm transition"
                 >
-                  {booking ? 'Booking...' : `Book Stay${effectiveEnd && effectiveEnd !== rangeStart ? ` · ${daysBetween(rangeStart, effectiveEnd)} nights` : ' · 1 night'}`}
+                  {booking ? t.booking : `${t.bookStay}${nightsCount ? ` · ${t.nights(nightsCount)}` : ` · ${t.nights(1)}`}`}
                 </button>
               </div>
             )}
@@ -255,10 +254,6 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
       </div>
     </div>
   )
-}
-
-function fmtFull(iso: string) {
-  return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function daysBetween(start: string, end: string) {

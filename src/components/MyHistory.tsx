@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 import { useStays, Stay } from '../hooks/useStays'
+import { useLang } from '../contexts/LanguageContext'
+import { Translations } from '../lib/i18n'
 import toast from 'react-hot-toast'
 
 type Props = { userId: string }
 
 export default function MyHistory({ userId }: Props) {
+  const { t } = useLang()
   const { stays, loading, fetchAll, deleteStay } = useStays(userId, false)
 
   useEffect(() => { fetchAll() }, [fetchAll])
@@ -18,10 +21,10 @@ export default function MyHistory({ userId }: Props) {
   async function handleDelete(id: number) {
     try {
       await deleteStay(id)
-      toast.success('Stay removed')
+      toast.success(t.stayRemoved)
       fetchAll()
     } catch {
-      toast.error('Failed to remove stay.')
+      toast.error(t.removeFailed)
     }
   }
 
@@ -37,52 +40,49 @@ export default function MyHistory({ userId }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <span className="text-4xl">📅</span>
-        <p className="text-slate-300 font-medium">No stays booked yet</p>
-        <p className="text-slate-500 text-sm">Go to the Calendar tab and select a date range to book your first stay</p>
+        <p className="text-slate-300 font-medium">{t.noStaysYet}</p>
+        <p className="text-slate-500 text-sm">{t.noStaysHint}</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Upcoming */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-green-400 text-base">●</span>
           <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-            Upcoming stays ({upcoming.length})
+            {t.upcomingStays} ({upcoming.length})
           </h3>
         </div>
 
         {upcoming.length === 0 ? (
-          <p className="text-slate-500 text-sm pl-5">No upcoming stays</p>
+          <p className="text-slate-500 text-sm pl-5">{t.noUpcoming}</p>
         ) : (
           <ul className="space-y-2">
             {upcoming.map(s => (
-              <StayCard key={s.id} stay={s} todayStr={todayStr} onDelete={handleDelete} />
+              <StayCard key={s.id} stay={s} todayStr={todayStr} onDelete={handleDelete} t={t} />
             ))}
           </ul>
         )}
       </section>
 
-      {/* Divider */}
       <div className="border-t border-slate-700" />
 
-      {/* Past */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-slate-500 text-base">●</span>
           <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-            Past stays ({past.length})
+            {t.pastStays} ({past.length})
           </h3>
         </div>
 
         {past.length === 0 ? (
-          <p className="text-slate-500 text-sm pl-5">No past stays</p>
+          <p className="text-slate-500 text-sm pl-5">{t.noPast}</p>
         ) : (
           <ul className="space-y-2">
             {past.map(s => (
-              <StayCard key={s.id} stay={s} todayStr={todayStr} onDelete={handleDelete} />
+              <StayCard key={s.id} stay={s} todayStr={todayStr} onDelete={handleDelete} t={t} />
             ))}
           </ul>
         )}
@@ -91,14 +91,21 @@ export default function MyHistory({ userId }: Props) {
   )
 }
 
-function StayCard({ stay, todayStr, onDelete }: {
+function StayCard({ stay, todayStr, onDelete, t }: {
   stay: Stay
   todayStr: string
   onDelete: (id: number) => void
+  t: Translations
 }) {
   const isActive = stay.fecha_inicio <= todayStr && stay.fecha_fin >= todayStr
   const isFuture = stay.fecha_inicio > todayStr
   const nights = daysBetween(stay.fecha_inicio, stay.fecha_fin)
+
+  function fmtDate(iso: string) {
+    return new Date(iso + 'T12:00:00').toLocaleDateString(t.locale, {
+      month: 'short', day: 'numeric', year: 'numeric',
+    })
+  }
 
   return (
     <li className={`flex items-center justify-between rounded-xl px-4 py-3 border transition
@@ -119,12 +126,12 @@ function StayCard({ stay, todayStr, onDelete }: {
             </p>
             {isActive && (
               <span className="text-xs bg-green-900/50 text-green-400 border border-green-700/50 rounded-full px-2 py-0.5">
-                Active
+                {t.active}
               </span>
             )}
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            {nights} night{nights !== 1 ? 's' : ''}
+            {t.nights(nights)}
             {stay.notas && ` · ${stay.notas}`}
           </p>
         </div>
@@ -135,17 +142,11 @@ function StayCard({ stay, todayStr, onDelete }: {
           onClick={() => onDelete(stay.id)}
           className="text-slate-500 hover:text-red-400 text-xs transition ml-3 flex-shrink-0"
         >
-          Remove
+          {t.remove}
         </button>
       )}
     </li>
   )
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  })
 }
 
 function daysBetween(start: string, end: string) {
