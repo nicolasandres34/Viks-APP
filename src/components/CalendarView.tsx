@@ -73,6 +73,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
   const effectiveEnd = rangeEnd && rangeEnd >= (rangeStart ?? '') ? rangeEnd : rangeStart
   const selectedStays = rangeStart ? getStaysInRange(rangeStart, effectiveEnd ?? rangeStart) : []
   const ownConflict = selectedStays.some(s => s.user_id === userId)
+  const othersConflict = selectedStays.some(s => s.user_id !== userId)
 
   const firstDay = new Date(year, month, 1)
   const startOffset = (firstDay.getDay() + 6) % 7
@@ -222,8 +223,16 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
               </div>
             )}
 
-            {/* Book form — visible for everyone unless they have a conflict */}
-            {!ownConflict ? (
+            {/* Book form */}
+            {ownConflict ? (
+              <p className="text-xs text-amber-400 text-center px-4 py-3">
+                You already have a stay in this period. Remove it first to rebook.
+              </p>
+            ) : othersConflict ? (
+              <p className="text-xs text-red-400 text-center px-4 py-3">
+                These dates are already booked by another user.
+              </p>
+            ) : (
               <div className="px-4 py-3 space-y-2.5">
                 <input
                   type="text"
@@ -240,10 +249,6 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                   {booking ? 'Booking...' : `Book Stay${effectiveEnd && effectiveEnd !== rangeStart ? ` · ${daysBetween(rangeStart, effectiveEnd)} nights` : ' · 1 night'}`}
                 </button>
               </div>
-            ) : (
-              <p className="text-xs text-amber-400 text-center px-4 py-3">
-                You already have a stay in this period. Remove it first to rebook.
-              </p>
             )}
           </div>
         )}
