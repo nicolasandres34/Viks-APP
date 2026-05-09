@@ -114,7 +114,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
       <div className="flex-shrink-0 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
         <div className="grid grid-cols-7 border-b border-slate-700">
           {t.days.map(d => (
-            <div key={d} className="text-center text-xs text-slate-500 py-2 font-medium">{d}</div>
+            <div key={d} className="text-center text-xs text-slate-500 py-2 lg:py-3 font-medium">{d}</div>
           ))}
         </div>
 
@@ -127,7 +127,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
             {cells.map((day, i) => {
               if (!day) return (
                 <div key={`e-${i}`}
-                  className={`h-10 ${i % 7 !== 6 ? 'border-r border-slate-700/30' : ''} ${i >= 7 ? 'border-t border-slate-700/30' : ''}`}
+                  className={`h-10 lg:h-20 ${i % 7 !== 6 ? 'border-r border-slate-700/30' : ''} ${i >= 7 ? 'border-t border-slate-700/30' : ''}`}
                 />
               )
               const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -141,7 +141,7 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                 <button
                   key={dateStr}
                   onClick={() => handleDayClick(dateStr)}
-                  className={`h-10 flex flex-col items-center justify-center gap-0.5 transition select-none
+                  className={`h-10 lg:h-20 flex flex-col items-center justify-center gap-0.5 transition select-none
                     ${onEdge ? 'bg-blue-600' : inRange ? 'bg-blue-600/20' : ''}
                     ${!inRange && !onEdge && isToday ? 'bg-slate-700/60' : ''}
                     ${!inRange && !onEdge && !isToday ? 'hover:bg-slate-700/40' : ''}
@@ -149,14 +149,14 @@ export default function CalendarView({ userId, isAdmin = false }: Props) {
                     ${i >= 7 ? 'border-t border-slate-700/30' : ''}
                   `}
                 >
-                  <span className={`text-xs font-medium leading-none
+                  <span className={`text-xs lg:text-base font-medium leading-none
                     ${onEdge ? 'text-white' : isToday ? 'text-blue-400' : 'text-slate-300'}`}>
                     {day}
                   </span>
                   {(isOwn || isOthers) && (
-                    <div className="flex gap-0.5">
-                      {isOwn && <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
-                      {isOthers && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                    <div className="flex gap-0.5 lg:gap-1">
+                      {isOwn && <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-blue-400" />}
+                      {isOthers && <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-red-500" />}
                     </div>
                   )}
                 </button>
