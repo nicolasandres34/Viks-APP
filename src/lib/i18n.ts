@@ -1,6 +1,10 @@
 export type Lang = 'en' | 'hr'
 
 export type Translations = {
+  save: string
+  cancel: string
+  nameUpdated: string
+  nameFailed: string
   signOut: string
   property: string
   accessControl: string
@@ -63,6 +67,10 @@ export type Translations = {
 }
 
 export const en: Translations = {
+  save: 'Save',
+  cancel: 'Cancel',
+  nameUpdated: 'Name updated',
+  nameFailed: 'Failed to update name',
   signOut: 'Sign out',
   property: 'Property',
   accessControl: 'Access Control',
@@ -125,6 +133,10 @@ export const en: Translations = {
 }
 
 export const hr: Translations = {
+  save: 'Spremi',
+  cancel: 'Odustani',
+  nameUpdated: 'Ime ažurirano',
+  nameFailed: 'Ažuriranje imena neuspješno',
   signOut: 'Odjava',
   property: 'Imanje',
   accessControl: 'Kontrola pristupa',

@@ -10,6 +10,8 @@ export default function AdminPanel() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [filters, setFilters] = useState<AdminFilters>({ userId: '', tipo: '', desde: '', hasta: '' })
   const [activeTab, setActiveTab] = useState<'accesos' | 'usuarios'>('accesos')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
   const { accesos, total, page, loading, fetch, PAGE_SIZE } = useAdminAccesos()
 
   useEffect(() => {
@@ -48,6 +50,24 @@ export default function AdminPanel() {
     const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
     if (error) toast.error(t.roleFailed)
     else { toast.success(t.roleUpdated); fetchProfiles() }
+  }
+
+  function startEdit(p: Profile) {
+    setEditingId(p.id)
+    setEditingName(p.nombre)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditingName('')
+  }
+
+  async function saveName(userId: string) {
+    const name = editingName.trim()
+    if (!name) return
+    const { error } = await supabase.from('profiles').update({ nombre: name }).eq('id', userId)
+    if (error) toast.error(t.nameFailed)
+    else { toast.success(t.nameUpdated); cancelEdit(); fetchProfiles() }
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -175,19 +195,39 @@ export default function AdminPanel() {
       {activeTab === 'usuarios' && (
         <div className="space-y-2">
           {profiles.map(p => (
-            <div key={p.id} className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
-              <div>
-                <p className="font-medium text-slate-100">{p.nombre}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{new Date(p.created_at).toLocaleDateString(t.locale)}</p>
+            <div key={p.id} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 space-y-2.5">
+              {editingId === p.id ? (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveName(p.id); if (e.key === 'Escape') cancelEdit() }}
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-slate-700 border border-blue-500 text-slate-100 text-sm focus:outline-none"
+                  />
+                  <button onClick={() => saveName(p.id)} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition">{t.save}</button>
+                  <button onClick={cancelEdit} className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs transition">{t.cancel}</button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-slate-100">{p.nombre}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{new Date(p.created_at).toLocaleDateString(t.locale)}</p>
+                  </div>
+                  <button onClick={() => startEdit(p)} className="text-xs text-slate-500 hover:text-slate-300 transition px-2 py-1 rounded hover:bg-slate-700">✏️</button>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">{t.user} role</span>
+                <select
+                  value={p.role}
+                  onChange={e => changeRole(p.id, e.target.value as 'admin' | 'usuario')}
+                  className="bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-100"
+                >
+                  <option value="usuario">{t.user}</option>
+                  <option value="admin">{t.admin}</option>
+                </select>
               </div>
-              <select
-                value={p.role}
-                onChange={e => changeRole(p.id, e.target.value as 'admin' | 'usuario')}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-100"
-              >
-                <option value="usuario">{t.user}</option>
-                <option value="admin">{t.admin}</option>
-              </select>
             </div>
           ))}
         </div>
